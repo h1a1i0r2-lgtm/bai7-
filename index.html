@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quizizz Sinh Học 10 - Tế Bào Nhân Sơ: Lông, Roi, Màng Ngoài & Tế Bào Chất</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+    body {
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+      color: #fff;
+    }
+    .bg-animated {
+      background: linear-gradient(-45deg, #1c053a, #0a0118, #3b0764, #140529);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .orb-1, .orb-2 {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      z-index: -1;
+      opacity: 0.45;
+      animation: floatOrb 12s infinite alternate ease-in-out;
+      pointer-events: none;
+    }
+    .orb-1 { width: 400px; height: 400px; background: #9333ea; top: -150px; left: -100px; }
+    .orb-2 { width: 350px; height: 350px; background: #ec4899; bottom: -100px; right: -50px; animation-delay: -6s; }
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, 60px) scale(1.15); }
+    }
+
+    .quiz-card {
+      background: rgba(28, 10, 56, 0.85);
+      backdrop-filter: blur(14px);
+      border: 2px solid rgba(168, 85, 247, 0.3);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.55), 0 0 25px rgba(147, 51, 234, 0.25);
+    }
+    .btn-quiz {
+      transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+    }
+    .btn-quiz:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 rgba(0,0,0,0.35);
+    }
+    .btn-quiz:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+    }
+    .glow-correct {
+      background-color: #10b981 !important;
+      border-color: #059669 !important;
+      color: #ffffff !important;
+      animation: pulseGlow 0.5s ease-in-out;
+    }
+    .glow-wrong {
+      background-color: #ef4444 !important;
+      border-color: #dc2626 !important;
+      color: #ffffff !important;
+      animation: shake 0.4s ease-in-out;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .svg-container svg, .svg-container img {
+      max-height: 220px;
+      width: auto;
+      max-width: 100%;
+      margin: 0 auto;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+      transition: transform 0.3s ease;
+    }
+    .svg-container:hover svg, .svg-container:hover img {
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+
+<body class="flex flex-col min-h-screen p-3 md:p-6 select-none bg-animated relative">
+
+  <div class="orb-1"></div>
+  <div class="orb-2"></div>
+
+  <!-- TOP HEADER -->
+  <header class="max-w-4xl w-full mx-auto mb-4 flex items-center justify-between bg-purple-950/70 p-3 rounded-2xl border border-purple-800/40 relative z-10">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center font-extrabold text-xl shadow-lg">
+        🦠
+      </div>
+      <div>
+        <h1 class="font-extrabold text-sm md:text-base tracking-wide text-purple-200">SINH HỌC 10 - TẾ BÀO NHÂN SƠ</h1>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-2 md:space-x-3 text-xs md:text-sm">
+      <button id="toggleSoundBtn" onclick="toggleSound()" class="px-2.5 py-1.5 rounded-lg bg-purple-900/80 hover:bg-purple-800 border border-purple-700/50 flex items-center gap-1.5 font-bold transition">
+        <span id="soundIcon">🔊</span> <span class="hidden sm:inline">Âm thanh</span>
+      </button>
+      <button id="toggleShuffleBtn" onclick="toggleShuffle()" class="px-2.5 py-1.5 rounded-lg bg-purple-900/80 hover:bg-purple-800 border border-purple-700/50 flex items-center gap-1.5 font-bold transition">
+        <span>🔀</span> <span class="hidden sm:inline" id="shuffleStatus">Xáo trộn: BẬT</span>
+      </button>
+      <div class="bg-amber-500/20 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-lg font-black flex items-center gap-1">
+        🔥 <span id="scoreBadge">0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-4xl w-full mx-auto flex-1 flex flex-col justify-center relative z-10">
+
+    <!-- START SCREEN -->
+    <div id="startScreen" class="quiz-card rounded-3xl p-6 md:p-10 text-center flex flex-col items-center">
+      <div class="inline-block p-4 rounded-3xl bg-purple-600/30 border border-purple-500/40 mb-3 animate-pulse">
+        🔬
+      </div>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black uppercase tracking-wider mb-2 shadow-inner">
+        <span>⭐ NHÓM 7 - BÀI 7: CẤU TẠO TẾ BÀO NHÂN SƠ ⭐</span>
+      </div>
+      <h2 class="text-2xl md:text-4xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300 drop-shadow-md">
+        LÔNG, ROI, MÀNG NGOÀI & TẾ BÀO CHẤT
+      </h2>
+
+      <div class="grid grid-cols-2 gap-3 w-full max-w-sm mb-8 text-xs md:text-sm">
+        <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800/40">
+          <div class="text-purple-400 font-bold">Tổng số câu</div>
+          <div class="text-lg font-extrabold text-white">20 câu</div>
+        </div>
+        <div class="bg-purple-900/40 p-3 rounded-xl border border-purple-800/40">
+          <div class="text-amber-400 font-bold">Chủ đề</div>
+          <div class="text-lg font-extrabold text-white">Vi khuẩn & Cổ khuẩn</div>
+        </div>
+      </div>
+
+      <button onclick="startQuiz()" class="btn-quiz w-full max-w-xs py-4 px-8 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-lg md:text-xl tracking-wider shadow-lg shadow-emerald-500/30">
+        BẮT ĐẦU THỬ THÁCH 🚀
+      </button>
+    </div>
+
+    <!-- QUIZ PLAY SCREEN -->
+    <div id="quizScreen" class="hidden flex-col">
+      <div class="flex items-center justify-between mb-2 text-xs md:text-sm font-bold text-purple-300">
+        <div class="flex items-center gap-2">
+          <span class="bg-purple-800/60 px-2.5 py-1 rounded-md" id="questionCounter">Câu 1/20</span>
+          <span class="px-2.5 py-1 rounded-md text-xs uppercase tracking-wider bg-purple-700 text-purple-100 font-extrabold" id="levelTag">Nhận biết</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="streakIndicator" class="text-amber-400">Chuỗi: 0 🔥</span>
+          <span id="timerIndicator" class="text-purple-200">⏱️ <span id="autoNextTimer">--</span></span>
+        </div>
+      </div>
+
+      <div class="w-full bg-purple-950/80 rounded-full h-2.5 mb-4 p-0.5 border border-purple-800/50 overflow-hidden">
+        <div id="progressBar" class="bg-gradient-to-r from-pink-500 to-emerald-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+
+      <!-- QUESTION CARD -->
+      <div class="quiz-card rounded-3xl p-5 md:p-8 flex flex-col justify-between min-h-[480px]">
+        <div>
+          <!-- BỌC HÌNH ẢNH & NÚT TẢI ẢNH TÙY CHỈNH -->
+          <div class="relative group">
+            <div id="illustrationBox" class="svg-container w-full bg-purple-950/80 border border-purple-700/50 rounded-2xl p-3 mb-2 flex items-center justify-center overflow-hidden min-h-[160px]"></div>
+            
+            <!-- Bộ công cụ tải ảnh cho người dùng -->
+            <div class="flex items-center justify-end gap-2 mb-4 text-xs">
+              <label class="cursor-pointer bg-purple-900/80 hover:bg-purple-800 border border-purple-600/60 text-purple-200 px-3 py-1 rounded-lg transition font-bold flex items-center gap-1 shadow-sm">
+                📁 Tải ảnh từ máy
+                <input type="file" id="imageFileInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+              </label>
+              <button onclick="promptCustomImageUrl()" class="bg-purple-900/80 hover:bg-purple-800 border border-purple-600/60 text-purple-200 px-3 py-1 rounded-lg transition font-bold flex items-center gap-1 shadow-sm">
+                🔗 Nhập URL ảnh
+              </button>
+            </div>
+          </div>
+
+          <div id="questionTitle" class="text-base md:text-xl font-black text-white leading-snug mb-3">Đang tải câu hỏi...</div>
+        </div>
+
+        <div id="answerOptionsContainer" class="w-full"></div>
+
+        <div id="feedbackBanner" class="hidden mt-4 p-3.5 rounded-2xl text-xs md:text-sm font-medium border transition-all duration-200">
+          <div class="flex items-start gap-2">
+            <span id="feedbackIcon" class="text-lg">💡</span>
+            <div>
+              <div id="feedbackTitle" class="font-bold text-sm mb-0.5">Giải thích chi tiết:</div>
+              <div id="feedbackText" class="text-purple-100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY / RESULT SCREEN -->
+    <div id="resultScreen" class="hidden quiz-card rounded-3xl p-6 md:p-10 text-center flex-col items-center">
+      <div id="resultTrophy" class="text-6xl mb-3 animate-bounce">🏆</div>
+      <h2 class="text-2xl md:text-4xl font-black text-white mb-1 drop-shadow-md" id="resultTitle">HOÀN THÀNH XUẤT SẮC!</h2>
+      <p class="text-purple-300 text-sm md:text-base mb-6" id="resultSubtitle">Bạn đã hoàn thành bộ câu hỏi về Tế bào nhân sơ!</p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-lg mb-8 text-center">
+        <div class="bg-purple-900/50 p-3 rounded-2xl border border-purple-700/40 shadow-inner">
+          <div class="text-xs text-purple-300 font-bold">Điểm số</div>
+          <div class="text-2xl font-black text-amber-400" id="finalScore">0</div>
+        </div>
+        <div class="bg-purple-900/50 p-3 rounded-2xl border border-purple-700/40 shadow-inner">
+          <div class="text-xs text-purple-300 font-bold">Độ chính xác</div>
+          <div class="text-2xl font-black text-emerald-400" id="finalAccuracy">0%</div>
+        </div>
+        <div class="bg-purple-900/50 p-3 rounded-2xl border border-purple-700/40 shadow-inner">
+          <div class="text-xs text-purple-300 font-bold">Số câu đúng</div>
+          <div class="text-2xl font-black text-teal-300" id="finalCorrectCount">0/20</div>
+        </div>
+        <div class="bg-purple-900/50 p-3 rounded-2xl border border-purple-700/40 shadow-inner">
+          <div class="text-xs text-purple-300 font-bold">Chuỗi cao nhất</div>
+          <div class="text-2xl font-black text-pink-400" id="finalMaxStreak">0 🔥</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+        <button onclick="restartQuiz()" class="btn-quiz flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-sm md:text-base shadow-lg">
+          CHƠI LẠI 🔁
+        </button>
+        <button onclick="reviewMistakes()" id="reviewBtn" class="btn-quiz flex-1 py-3.5 px-6 rounded-2xl bg-purple-900/80 hover:bg-purple-800 border border-purple-600/50 text-white font-extrabold text-sm md:text-base">
+          XEM LẠI ĐÁP ÁN 📑
+        </button>
+      </div>
+
+      <div id="reviewContainer" class="hidden mt-8 w-full text-left max-h-96 overflow-y-auto space-y-3 pr-2"></div>
+    </div>
+
+  </main>
+
+  <script>
+    const SoundFX = {
+      ctx: null,
+      enabled: true,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      playClick() {
+        if (!this.enabled) return;
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(650, t);
+          osc.frequency.exponentialRampToValueAtTime(280, t + 0.05);
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.05);
+        } catch(e) {}
+      },
+      playCorrect(streakLevel = 0) {
+        if (!this.enabled) return;
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const noteTime = t + idx * 0.06;
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, noteTime);
+            gain.gain.setValueAtTime(0, noteTime);
+            gain.gain.linearRampToValueAtTime(0.25, noteTime + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.35);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(noteTime);
+            osc.stop(noteTime + 0.35);
+          });
+        } catch(e) {}
+      },
+      playWrong() {
+        if (!this.enabled) return;
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc1 = this.ctx.createOscillator();
+          const gainDissonant = this.ctx.createGain();
+          osc1.type = 'sawtooth';
+          osc1.frequency.setValueAtTime(260, t);
+          osc1.frequency.exponentialRampToValueAtTime(120, t + 0.32);
+          gainDissonant.gain.setValueAtTime(0.28, t);
+          gainDissonant.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+          osc1.connect(gainDissonant);
+          gainDissonant.connect(this.ctx.destination);
+          osc1.start(t);
+          osc1.stop(t + 0.35);
+        } catch(e) {}
+      },
+      playComplete() {
+        if (!this.enabled) return;
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const notes = [261.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, t + i*0.1);
+            gain.gain.setValueAtTime(0.2, t + i*0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + i*0.1 + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t + i*0.1);
+            osc.stop(t + i*0.1 + 0.3);
+          });
+        } catch(e) {}
+      }
+    };
+
+    function toggleSound() {
+      SoundFX.enabled = !SoundFX.enabled;
+      document.getElementById('soundIcon').innerText = SoundFX.enabled ? '🔊' : '🔇';
+      if (SoundFX.enabled) SoundFX.playClick();
+    }
+
+    // SVG HÌNH ẢNH MINH HỌA MẶC ĐỊNH
+    const SVG_LIB = {
+      cellOverview: `<svg viewBox="0 0 600 220" class="w-full" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bgGlow1" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3b0764" stop-opacity="0.6"/><stop offset="100%" stop-color="#0f051d" stop-opacity="0"/></radialGradient><linearGradient id="capsuleGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ec4899"/><stop offset="50%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient><linearGradient id="innerGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#047857"/></linearGradient><filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter></defs><rect width="600" height="220" rx="16" fill="#0c0414"/><circle cx="300" cy="110" r="180" fill="url(#bgGlow1)"/><g transform="translate(150, 40)"><path d="M 20 30 L -15 10 M 20 60 L -25 55 M 20 90 L -25 95 M 20 120 L -10 135" stroke="#f472b6" stroke-width="3" stroke-linecap="round"/><path d="M 80 10 L 85 -15 M 140 10 L 145 -18 M 200 10 L 210 -15" stroke="#f472b6" stroke-width="3" stroke-linecap="round"/><path d="M 80 130 L 85 155 M 140 130 L 145 158 M 200 130 L 205 152" stroke="#f472b6" stroke-width="3" stroke-linecap="round"/><path d="M 280 70 C 330 30, 360 110, 410 60 S 460 70, 490 50" fill="none" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" filter="url(#glowEffect)"/><path d="M 280 80 C 320 130, 370 40, 420 110 S 450 80, 485 100" fill="none" stroke="#0ea5e9" stroke-width="3.5" stroke-linecap="round"/><rect x="10" y="10" width="280" height="120" rx="60" fill="url(#capsuleGrad)" opacity="0.85" filter="url(#glowEffect)"/><rect x="22" y="22" width="256" height="96" rx="48" fill="#1e1b4b" stroke="#f59e0b" stroke-width="3"/><rect x="32" y="32" width="236" height="76" rx="38" fill="url(#innerGrad)"/><path d="M 70 70 Q 90 45, 120 70 T 170 65 Q 210 75, 180 85 T 110 80 Z" fill="none" stroke="#fef08a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glowEffect)"/><path d="M 85 65 Q 110 85, 140 60 T 195 75" fill="none" stroke="#facc15" stroke-width="2.5" stroke-linecap="round"/><circle cx="55" cy="55" r="3.5" fill="#ffffff"/><circle cx="65" cy="85" r="3" fill="#ffffff"/><circle cx="105" cy="48" r="4" fill="#ffffff"/><circle cx="155" cy="48" r="3.5" fill="#ffffff"/><circle cx="215" cy="60" r="3" fill="#ffffff"/><circle cx="225" cy="80" r="4" fill="#ffffff"/><circle cx="160" cy="95" r="3.5" fill="#ffffff"/><circle cx="120" cy="92" r="3" fill="#ffffff"/><circle cx="80" cy="95" r="8" fill="#f43f5e"/><circle cx="200" cy="92" r="7" fill="#3b82f6"/></g></svg>`,
+      flagellumEngine: `<svg viewBox="0 0 600 220" class="w-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#64748b"/><stop offset="50%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#475569"/></linearGradient><linearGradient id="membraneLayer" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ec4899"/><stop offset="100%" stop-color="#831843"/></linearGradient></defs><rect width="600" height="220" rx="16" fill="#0b0f19"/><g transform="translate(40, 20)"><rect x="0" y="80" width="300" height="18" rx="9" fill="url(#membraneLayer)"/><rect x="0" y="140" width="300" height="18" rx="9" fill="url(#membraneLayer)"/><rect x="0" y="108" width="300" height="22" rx="4" fill="#d97706" opacity="0.8"/><rect x="110" y="65" width="80" height="15" rx="4" fill="url(#metalGrad)"/><rect x="120" y="80" width="60" height="28" rx="3" fill="#0284c7"/><rect x="105" y="108" width="90" height="22" rx="5" fill="url(#metalGrad)"/><rect x="120" y="130" width="60" height="28" rx="3" fill="#0284c7"/><rect x="100" y="158" width="100" height="16" rx="4" fill="url(#metalGrad)"/><rect x="142" y="45" width="16" height="120" fill="#f59e0b" rx="2"/><path d="M 150 45 C 150 15, 180 5, 210 15" fill="none" stroke="#f59e0b" stroke-width="18" stroke-linecap="round"/><path d="M 210 15 C 270 30, 330 -10, 390 20 S 480 30, 520 10" fill="none" stroke="#38bdf8" stroke-width="12" stroke-linecap="round"/><path d="M 210 15 C 270 30, 330 -10, 390 20 S 480 30, 520 10" fill="none" stroke="#e0f2fe" stroke-width="4" stroke-linecap="round"/><path d="M 80 170 A 35 20 0 1 1 140 185" fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="6,4" marker-end="url(#arrow)"/></g></svg>`,
+      archaeaGroup: `<svg viewBox="0 0 600 220" class="w-full" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="archaea1" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#b45309"/></radialGradient><radialGradient id="archaea2" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#064e3b"/></radialGradient><radialGradient id="archaea3" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#f472b6"/><stop offset="100%" stop-color="#831843"/></radialGradient></defs><rect width="600" height="220" rx="16" fill="#110a1f"/><g transform="translate(60, 30)"><path d="M 30 40 Q 70 20 110 50 T 100 120 Q 50 140 20 100 Z" fill="url(#archaea1)" opacity="0.9"/><circle cx="50" cy="70" r="6" fill="#fef08a" opacity="0.6"/><circle cx="80" cy="85" r="9" fill="#fef08a" opacity="0.6"/><circle cx="260" cy="100" r="45" fill="url(#archaea2)"/><path d="M 260 55 L 260 20 M 260 145 L 260 180 M 215 100 L 180 100 M 305 100 L 340 100 M 228 68 L 200 40 M 292 132 L 320 160" stroke="#10b981" stroke-width="4" stroke-linecap="round"/><rect x="380" y="50" width="110" height="55" rx="27.5" fill="url(#archaea3)" transform="rotate(15, 435, 77)"/><path d="M 470 90 Q 520 100 540 130" fill="none" stroke="#ec4899" stroke-width="4" stroke-linecap="round"/></g></svg>`,
+      bacteriaGroup: `<svg viewBox="0 0 600 220" class="w-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bacGrad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#0e7490"/></linearGradient><linearGradient id="bacGrad2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#6b21a8"/></linearGradient></defs><rect width="600" height="220" rx="16" fill="#080d1a"/><g transform="translate(50, 30)"><g transform="translate(140, 20)"><rect x="0" y="0" width="220" height="90" rx="45" fill="url(#bacGrad1)"/><path d="M 30 -10 L 30 0 M 70 -10 L 70 0 M 110 -10 L 110 0 M 150 -10 L 150 0 M 190 -10 L 190 0" stroke="#67e8f9" stroke-width="3"/><path d="M 30 90 L 30 100 M 70 90 L 70 100 M 110 90 L 110 100 M 150 90 L 150 100 M 190 90 L 190 100" stroke="#67e8f9" stroke-width="3"/><path d="M 0 45 C -40 10, -70 80, -110 40" fill="none" stroke="#22d3ee" stroke-width="4" stroke-linecap="round"/><path d="M 0 45 C -40 70, -70 10, -110 50" fill="none" stroke="#0891b2" stroke-width="3" stroke-linecap="round"/></g><g transform="translate(20, 110)"><circle cx="30" cy="30" r="22" fill="url(#bacGrad2)"/><circle cx="68" cy="30" r="22" fill="url(#bacGrad2)"/><circle cx="106" cy="35" r="22" fill="url(#bacGrad2)"/><circle cx="144" cy="42" r="22" fill="url(#bacGrad2)"/><circle cx="182" cy="38" r="22" fill="url(#bacGrad2)"/></g></g></svg>`,
+      outerMembrane: `<svg viewBox="0 0 600 220" class="w-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cellWallGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#b45309"/></linearGradient></defs><rect width="600" height="220" rx="16" fill="#0f0914"/><g transform="translate(40, 25)"><rect x="0" y="130" width="320" height="18" rx="6" fill="#10b981"/><rect x="0" y="100" width="320" height="18" rx="4" fill="url(#cellWallGrad)"/><rect x="0" y="60" width="320" height="25" rx="6" fill="#ef4444"/><path d="M 20 60 L 20 30 M 40 60 L 40 25 M 70 60 L 70 30 M 100 60 L 100 25 M 130 60 L 130 30 M 160 60 L 160 25 M 190 60 L 190 30 M 220 60 L 220 25 M 250 60 L 250 30 M 280 60 L 280 25" stroke="#fca5a5" stroke-width="4" stroke-linecap="round"/><g transform="translate(360, 20)"><circle cx="90" cy="80" r="55" fill="#94a3b8" opacity="0.85"/><circle cx="75" cy="65" r="16" fill="#475569"/><circle cx="105" cy="90" r="12" fill="#475569"/><path d="M 30 80 Q -10 80 -30 60" fill="none" stroke="#f43f5e" stroke-width="5" stroke-linecap="round" stroke-dasharray="6,4"/><polygon points="-35,50 -20,65 -40,75" fill="#f43f5e"/></g></g></svg>`,
+      ribosomeFactory: `<svg viewBox="0 0 600 220" class="w-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="mrnaGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs><rect width="600" height="220" rx="16" fill="#06121e"/><g transform="translate(40, 20)"><path d="M 20 120 C 120 160, 220 80, 320 130 S 450 100, 520 120" fill="none" stroke="url(#mrnaGrad)" stroke-width="6" stroke-linecap="round"/><g transform="translate(130, 75)"><path d="M 10 35 C 10 5, 65 5, 65 35 Z" fill="#8b5cf6"/><ellipse cx="37" cy="48" rx="30" ry="12" fill="#a78bfa"/><circle cx="37" cy="-5" r="7" fill="#10b981"/><circle cx="30" cy="-18" r="7" fill="#10b981"/><circle cx="42" cy="-30" r="7" fill="#3b82f6"/><circle cx="35" cy="-42" r="7" fill="#f59e0b"/><circle cx="48" cy="-52" r="7" fill="#ef4444"/></g><g transform="translate(320, 70)"><path d="M 10 35 C 10 5, 65 5, 65 35 Z" fill="#6366f1"/><ellipse cx="37" cy="48" rx="30" ry="12" fill="#818cf8"/><circle cx="37" cy="-2" r="6" fill="#10b981"/><circle cx="28" cy="-12" r="6" fill="#3b82f6"/></g></g></svg>`,
+      pilusDetail: `<svg viewBox="0 0 600 220" class="w-full" xmlns="http://www.w3.org/2000/svg"><rect width="600" height="220" rx="16" fill="#180b18"/><g transform="translate(50, 20)"><rect x="0" y="130" width="500" height="40" rx="10" fill="#9f1239"/><path d="M 0 130 Q 25 120 50 130 T 100 130 T 150 130 T 200 130 T 250 130 T 300 130 T 350 130 T 400 130 T 450 130 T 500 130" fill="#be185d"/><rect x="120" y="20" width="260" height="70" rx="35" fill="#047857" stroke="#10b981" stroke-width="3"/><path d="M 150 88 L 150 130 M 180 88 L 180 130 M 210 88 L 210 130 M 240 88 L 240 130 M 270 88 L 270 130 M 300 88 L 300 130 M 330 88 L 330 130" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/><circle cx="150" cy="130" r="4" fill="#ef4444"/><circle cx="180" cy="130" r="4" fill="#ef4444"/><circle cx="210" cy="130" r="4" fill="#ef4444"/><circle cx="240" cy="130" r="4" fill="#ef4444"/><circle cx="270" cy="130" r="4" fill="#ef4444"/><circle cx="300" cy="130" r="4" fill="#ef4444"/><circle cx="330" cy="130" r="4" fill="#ef4444"/></g></svg>`,
+      cytoplasmDetail: `<svg viewBox="0 0 600 220" class="w-full" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="cytoBg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#a855f7" stop-opacity="0.4"/><stop offset="100%" stop-color="#3b0764" stop-opacity="0.1"/></radialGradient></defs><rect width="600" height="220" rx="16" fill="#0b0714"/><rect x="30" y="20" width="540" height="180" rx="90" fill="url(#cytoBg)" stroke="#9333ea" stroke-width="4"/><g transform="translate(50, 30)"><circle cx="120" cy="70" r="22" fill="#f59e0b" opacity="0.85"/><circle cx="120" cy="70" r="16" fill="#fbbf24"/><circle cx="360" cy="110" r="28" fill="#10b981" opacity="0.85"/><circle cx="360" cy="110" r="20" fill="#34d399"/><circle cx="240" cy="130" r="18" fill="#ec4899" opacity="0.85"/><circle cx="80" cy="50" r="4" fill="#f8fafc"/><circle cx="160" cy="40" r="4" fill="#f8fafc"/><circle cx="200" cy="80" r="4" fill="#f8fafc"/><circle cx="280" cy="50" r="4" fill="#f8fafc"/><circle cx="320" cy="80" r="4" fill="#f8fafc"/><circle cx="420" cy="60" r="4" fill="#f8fafc"/><circle cx="440" cy="110" r="4" fill="#f8fafc"/><circle cx="180" cy="120" r="4" fill="#f8fafc"/><circle cx="100" cy="120" r="4" fill="#f8fafc"/><circle cx="300" cy="130" r="4" fill="#f8fafc"/><circle cx="140" cy="100" r="2" fill="#38bdf8"/><circle cx="220" cy="40" r="2" fill="#38bdf8"/><circle cx="390" cy="70" r="2" fill="#38bdf8"/><circle cx="260" cy="90" r="2" fill="#38bdf8"/></g></svg>`
+    };
+
+    // BỘ 20 CÂU HỎI VỚI THUỘC TÍNH imageSrc ĐỂ BẠN TỰ ĐƯA HÌNH ẢNH VÀO
+    // Bạn có thể điền link ảnh trực tiếp vào thuộc tính imageSrc bên dưới! (VD: imageSrc: "images/cau1.png" hoặc "https://link-anh.com/p.jpg")
+    const QUESTION_BANK = [
+      {
+        id: 1, level: "Nhận biết", type: "single", svg: SVG_LIB.cellOverview, imageSrc: "anh6.jpg",
+        question: "Hầu hết các tế bào nhân sơ có đặc điểm chung về tổ chức cơ thể là gì?",
+        options: [
+          { text: "Đều là những sinh vật đơn bào", isCorrect: true },
+          { text: "Đều là những sinh vật đa bào phức tạp", isCorrect: false },
+          { text: "Đều có màng nhân bao bọc khối vật chất di truyền", isCorrect: false },
+          { text: "Đều chứa hệ thống bào quan có màng bao bọc", isCorrect: false }
+        ],
+        explanation: "Theo SGK Sinh học 10 (Hình 7.2), hầu hết các tế bào nhân sơ đều là những sinh vật đơn bào."
+      },
+      {
+        id: 2, level: "Nhận biết", type: "single", svg: SVG_LIB.archaeaGroup, imageSrc: "anh6.jpg",
+        question: "Đa số sinh vật nhân sơ thuộc hai nhóm chính nào sau đây?",
+        options: [
+          { text: "Vi khuẩn và Archaea (cổ khuẩn)", isCorrect: true },
+          { text: "Nấm men và Động vật nguyên sinh", isCorrect: false },
+          { text: "Tảo đơn bào và Thực vật hạt kín", isCorrect: false },
+          { text: "Virus và Vi khuẩn lam", isCorrect: false }
+        ],
+        explanation: "Đa số sinh vật nhân sơ bao gồm Vi khuẩn (Bacteria) và Archaea (cổ khuẩn)."
+      },
+      {
+        id: 3, level: "Nhận biết", type: "true_false", svg: SVG_LIB.archaeaGroup, imageSrc: "anh6.jpg",
+        question: "Đúng hay Sai: Thuật ngữ 'Archaea' được đọc là 'a-ki-a' và còn được gọi là cổ khuẩn hay vi khuẩn cổ?",
+        options: [
+          { text: "Đúng", isCorrect: true },
+          { text: "Sai", isCorrect: false }
+        ],
+        explanation: "Phát biểu hoàn toàn chính xác theo ghi chú trong SGK Sinh học 10."
+      },
+      {
+        id: 4, level: "Nhận biết", type: "single", svg: SVG_LIB.flagellumEngine, imageSrc: "anh5.jpg",
+        question: "Roi (tiên mao) ở tế bào vi khuẩn được cấu tạo chủ yếu từ thành phần nào?",
+        options: [
+          { text: "Bó sợi protein", isCorrect: true },
+          { text: "Lớp kép phospholipid", isCorrect: false },
+          { text: "Lipopolysaccharide", isCorrect: false },
+          { text: "Peptidoglycan", isCorrect: false }
+        ],
+        explanation: "Theo nội dung bài học, roi ở vi khuẩn được cấu tạo từ các bó sợi protein bền chắc."
+      },
+      {
+        id: 5, level: "Nhận biết", type: "single", svg: SVG_LIB.flagellumEngine, imageSrc: "anh5.jpg",
+        question: "Chức năng chính của roi đối với tế bào vi khuẩn là gì?",
+        options: [
+          { text: "Là cơ quan vận động giúp tế bào di chuyển", isCorrect: true },
+          { text: "Giúp tế bào bám dính vào bề mặt vật chủ", isCorrect: false },
+          { text: "Tổng hợp toàn bộ protein cho tế bào", isCorrect: false },
+          { text: "Bảo vệ tế bào tránh khỏi bạch cầu", isCorrect: false }
+        ],
+        explanation: "Roi đóng vai trò là động cơ vận động chủ lực giúp tế bào bơi trong môi trường chất lỏng."
+      },
+      {
+        id: 6, level: "Nhận biết", type: "true_false", svg: SVG_LIB.flagellumEngine, imageSrc: "anh5.jpg",
+        question: "Đúng hay Sai: Tất cả các loại tế bào vi khuẩn bắt buộc chỉ có đúng một chiếc roi duy nhất?",
+        options: [
+          { text: "Đúng", isCorrect: false },
+          { text: "Sai", isCorrect: true }
+        ],
+        explanation: "Sai, các tế bào vi khuẩn có thể có một, một vài roi hoặc không có roi."
+      },
+      {
+        id: 7, level: "Nhận biết", type: "single", svg: SVG_LIB.pilusDetail, imageSrc: "anh4.jpg",
+        question: "So với roi, lông (pilus) ở tế bào vi khuẩn có đặc điểm hình thái như thế nào?",
+        options: [
+          { text: "Ngắn hơn nhưng có số lượng nhiều hơn", isCorrect: true },
+          { text: "Dài hơn nhưng có số lượng ít hơn", isCorrect: false },
+          { text: "Có chiều dài và số lượng hoàn toàn giống roi", isCorrect: false },
+          { text: "Có kích thước lớn hơn roi rất nhiều lần", isCorrect: false }
+        ],
+        explanation: "SGK ghi rõ: Lông ngắn hơn nhưng có số lượng nhiều hơn roi."
+      },
+      {
+        id: 8, level: "Nhận biết", type: "single", svg: SVG_LIB.pilusDetail, imageSrc: "anh8.jpg",
+        question: "Lông ở tế bào vi khuẩn đảm nhận chức năng quan trọng nào sau đây?",
+        options: [
+          { text: "Giúp bám dính, tiếp hợp với nhau hoặc bám vào bề mặt tế bào sinh vật khác", isCorrect: true },
+          { text: "Cung cấp năng lượng ATP cho hoạt động di chuyển", isCorrect: false },
+          { text: "Chuyển hóa các chất vô cơ thành chất hữu cơ", isCorrect: false },
+          { text: "Lưu giữ thông tin di truyền cho thế hệ sau", isCorrect: false }
+        ],
+        explanation: "Lông là hệ thống bám dính, tiếp hợp giúp các tế bào vi khuẩn bám vào tế bào chủ hoặc tiếp hợp với nhau."
+      },
+      {
+        id: 9, level: "Nhận biết", type: "single", svg: SVG_LIB.pilusDetail, imageSrc: "anh8.jpg",
+        question: "Vi khuẩn Helicobacter pylori sử dụng bộ phận nào để bám dính vào tế bào niêm mạc dạ dày người?",
+        options: [
+          { text: "Lông", isCorrect: true },
+          { text: "Roi", isCorrect: false },
+          { text: "Màng ngoài", isCorrect: false },
+          { text: "Plasmid", isCorrect: false }
+        ],
+        explanation: "Ví dụ SGK: Vi khuẩn Helicobacter pylori dùng lông bám dính vào tế bào niêm mạc dạ dày người, gây viêm loét."
+      },
+      {
+        id: 10, level: "Nhận biết", type: "true_false", svg: SVG_LIB.outerMembrane, imageSrc: "anh8.jpg",
+        question: "Đúng hay Sai: Màng ngoài là cấu trúc bắt buộc có mặt ở tất cả mọi loại tế bào vi khuẩn?",
+        options: [
+          { text: "Đúng", isCorrect: false },
+          { text: "Sai", isCorrect: true }
+        ],
+        explanation: "Sai. Màng ngoài không xuất hiện ở mọi vi khuẩn, chỉ tồn tại ở một số loại nhất định."
+      },
+      {
+        id: 11, level: "Nhận biết", type: "single", svg: SVG_LIB.outerMembrane, imageSrc: "anh8.jpg",
+        question: "Thành phần cấu tạo chủ yếu của màng ngoài ở một số vi khuẩn là gì?",
+        options: [
+          { text: "Lipopolysaccharide", isCorrect: true },
+          { text: "Peptidoglycan", isCorrect: false },
+          { text: "Cellulose", isCorrect: false },
+          { text: "Chitin", isCorrect: false }
+        ],
+        explanation: "Màng ngoài phủ bên ngoài thành tế bào có cấu tạo chủ yếu từ Lipopolysaccharide."
+      },
+      {
+        id: 12, level: "Nhận biết", type: "single", svg: SVG_LIB.outerMembrane, imageSrc: "anh8.jpg",
+        question: "Ở một số vi khuẩn gây bệnh, màng ngoài mang lại vai trò bảo vệ nào?",
+        options: [
+          { text: "Bảo vệ chúng tránh khỏi sự tấn công của các tế bào bạch cầu", isCorrect: true },
+          { text: "Giúp vi khuẩn tăng tốc độ tổng hợp protein", isCorrect: false },
+          { text: "Giúp tế bào di chuyển nhanh hơn trong nước", isCorrect: false },
+          { text: "Giúp nhân đôi DNA nhanh gấp hai lần", isCorrect: false }
+        ],
+        explanation: "Màng ngoài đóng vai trò như tấm khiên bảo vệ vi khuẩn khỏi sự tấn công của tế bào bạch cầu."
+      },
+      {
+        id: 13, level: "Nhận biết", type: "single", svg: SVG_LIB.cytoplasmDetail, imageSrc: "anh7.jpg",
+        question: "Khối tế bào chất của tế bào nhân sơ nằm ở vị trí nào trong tế bào?",
+        options: [
+          { text: "Nằm giữa màng tế bào và vùng nhân", isCorrect: true },
+          { text: "Nằm phía bên ngoài màng ngoài", isCorrect: false },
+          { text: "Nằm gói gọn hoàn toàn trong vùng nhân", isCorrect: false },
+          { text: "Nằm giữa thành tế bào và màng ngoài", isCorrect: false }
+        ],
+        explanation: "Vị trí tế bào chất: Nằm giữa màng tế bào và vùng nhân."
+      },
+      {
+        id: 14, level: "Nhận biết", type: "single", svg: SVG_LIB.cytoplasmDetail, imageSrc: "anh7.jpg",
+        question: "Thành phần chính cấu tạo nên tế bào chất ở tế bào nhân sơ là gì?",
+        options: [
+          { text: "Bào tương", isCorrect: true },
+          { text: "Lưới nội chất", isCorrect: false },
+          { text: "Bộ máy Golgi", isCorrect: false },
+          { text: "Hệ thống màng nhân", isCorrect: false }
+        ],
+        explanation: "Thành phần chính của tế bào chất là bào tương dạng keo lỏng."
+      },
+      {
+        id: 15, level: "Nhận biết", type: "true_false", svg: SVG_LIB.cytoplasmDetail, imageSrc: "anh7.jpg",
+        question: "Đúng hay Sai: Bào tương là dạng keo lỏng có thành phần chủ yếu là nước cùng các hợp chất hữu cơ và vô cơ?",
+        options: [
+          { text: "Đúng", isCorrect: true },
+          { text: "Sai", isCorrect: false }
+        ],
+        explanation: "Phát biểu chính xác hoàn toàn theo mô tả trong SGK."
+      },
+      {
+        id: 16, level: "Nhận biết", type: "single", svg: SVG_LIB.cytoplasmDetail, imageSrc: "anh7.jpg",
+        question: "Các hạt dự trữ thường xuất hiện trong bào tương của tế bào nhân sơ chứa chất gì?",
+        options: [
+          { text: "Đường và lipid", isCorrect: true },
+          { text: "Protein và DNA", isCorrect: false },
+          { text: "Cellulose và chitin", isCorrect: false },
+          { text: "Muối khoáng và vitamin C", isCorrect: false }
+        ],
+        explanation: "Trong bào tương có chứa các hạt dự trữ dạng đường và lipid."
+      },
+      {
+        id: 17, level: "Nhận biết", type: "single", svg: SVG_LIB.ribosomeFactory, imageSrc: "anh3.jpg",
+        question: "Số lượng ribosome có trong bào tương của một tế bào vi khuẩn nằm trong khoảng nào?",
+        options: [
+          { text: "10 000 đến 100 000", isCorrect: true },
+          { text: "100 đến 1 000", isCorrect: false },
+          { text: "1 triệu đến 10 triệu", isCorrect: false },
+          { text: "Chỉ từ 10 đến 50", isCorrect: false }
+        ],
+        explanation: "Trong bào tương chứa mật độ ribosome rất dày đặc (từ 10 000 đến 100 000)."
+      },
+      {
+        id: 18, level: "Nhận biết", type: "single", svg: SVG_LIB.ribosomeFactory, imageSrc: "anh3.jpg",
+        question: "Ribosome nằm trong tế bào chất của tế bào nhân sơ đóng vai trò là nơi diễn ra quá trình nào?",
+        options: [
+          { text: "Tổng hợp protein", isCorrect: true },
+          { text: "Tổng hợp lipid", isCorrect: false },
+          { text: "Tái bản DNA", isCorrect: false },
+          { text: "Phân giải chất độc", isCorrect: false }
+        ],
+        explanation: "Ribosome là 'nhà máy vi mô' đảm nhận nhiệm vụ tổng hợp protein cho tế bào."
+      },
+      {
+        id: 19, level: "Thông hiểu", type: "single", svg: SVG_LIB.cytoplasmDetail, imageSrc: "anh7.jpg",
+        question: "Vì sao nói tế bào chất là môi trường quan trọng nhất đối với sự sống của tế bào vi khuẩn?",
+        options: [
+          { text: "Vì đây là nơi diễn ra các phản ứng hoá sinh, đảm bảo duy trì các hoạt động sống của tế bào", isCorrect: true },
+          { text: "Vì tế bào chất giúp bảo vệ tế bào khỏi bị đòn tấn công của thuốc kháng sinh", isCorrect: false },
+          { text: "Vì tế bào chất quy định khả năng di chuyển hướng hoá học của vi khuẩn", isCorrect: false },
+          { text: "Vì đây là nơi duy nhất lưu giữ toàn bộ bộ gen di truyền của vi khuẩn", isCorrect: false }
+        ],
+        explanation: "Tế bào chất là môi trường diễn ra toàn bộ các phản ứng hoá sinh để duy trì sự sống."
+      },
+      {
+        id: 20, level: "Thông hiểu", type: "single", svg: SVG_LIB.outerMembrane, imageSrc: "anh8.jpg",
+        question: "Nếu một loại vi khuẩn gây bệnh bị đột biến mất khả năng tạo màng ngoài (lipopolysaccharide), điều gì có khả năng cao sẽ xảy ra khi chúng xâm nhập vào cơ thể vật chủ?",
+        options: [
+          { text: "Chúng dễ bị các tế bào bạch cầu của hệ miễn dịch tiêu diệt hơn", isCorrect: true },
+          { text: "Chúng lập tức mất đi khả năng di chuyển trong môi trường", isCorrect: false },
+          { text: "Chúng không thể thực hiện quá trình tổng hợp protein được nữa", isCorrect: false },
+          { text: "Tế bào chất của chúng sẽ bị vỡ ra ngay lập tức", isCorrect: false }
+        ],
+        explanation: "Vì màng ngoài đóng vai trò như lớp giáp chống bạch cầu; nếu mất màng ngoài, vi khuẩn sẽ dễ bị hệ miễn dịch tiêu diệt."
+      }
+    ];
+
+    let questions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let streak = 0;
+    let maxStreak = 0;
+    let correctCount = 0;
+    let isShuffle = true;
+    let isAnsweringBlocked = false;
+    let autoNextTimeout = null;
+    let userAnswersHistory = [];
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function toggleShuffle() {
+      SoundFX.playClick();
+      isShuffle = !isShuffle;
+      document.getElementById('shuffleStatus').innerText = isShuffle ? 'Xáo trộn: BẬT' : 'Xáo trộn: TẮT';
+    }
+
+    function startQuiz() {
+      SoundFX.playClick();
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('resultScreen').classList.add('hidden');
+      document.getElementById('quizScreen').classList.remove('hidden');
+      document.getElementById('quizScreen').classList.add('flex');
+
+      questions = isShuffle ? shuffleArray(QUESTION_BANK) : JSON.parse(JSON.stringify(QUESTION_BANK));
+      if (isShuffle) {
+        questions.forEach(q => { 
+          if (q.type !== 'true_false') {
+            q.options = shuffleArray(q.options); 
+          }
+        });
+      }
+
+      currentIndex = 0;
+      score = 0;
+      streak = 0;
+      maxStreak = 0;
+      correctCount = 0;
+      userAnswersHistory = [];
+      updateScoreBadge();
+      loadQuestion(currentIndex);
+    }
+
+    function updateScoreBadge() {
+      document.getElementById('scoreBadge').innerText = score;
+      document.getElementById('streakIndicator').innerText = `Chuỗi: ${streak} 🔥`;
+    }
+
+    // HIỂN THỊ CÂU HỎI & HÌNH ẢNH CỦA CÂU HỎI
+    function loadQuestion(index) {
+      if (index >= questions.length) {
+        finishQuiz();
+        return;
+      }
+
+      isAnsweringBlocked = false;
+      clearTimeout(autoNextTimeout);
+      document.getElementById('autoNextTimer').innerText = '--';
+
+      const q = questions[index];
+      const progressPercent = (index / questions.length) * 100;
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
+      document.getElementById('questionCounter').innerText = `Câu ${index + 1}/${questions.length}`;
+
+      const levelTag = document.getElementById('levelTag');
+      if (q.level === 'Thông hiểu') {
+        levelTag.innerText = 'Thông hiểu';
+        levelTag.className = 'px-2.5 py-1 rounded-md text-xs uppercase tracking-wider bg-amber-500/30 text-amber-300 font-extrabold border border-amber-500/50';
+      } else {
+        levelTag.innerText = 'Nhận biết';
+        levelTag.className = 'px-2.5 py-1 rounded-md text-xs uppercase tracking-wider bg-purple-700 text-purple-100 font-extrabold';
+      }
+
+      // ƯU TIÊN HIỂN THỊ HÌNH TẢI LÊN/ĐƯỜNG DẪN ẢNH -> NẾU KHÔNG CÓ THÌ DÙNG SVG
+      renderQuestionImage(q);
+
+      document.getElementById('questionTitle').innerText = q.question;
+      document.getElementById('feedbackBanner').classList.add('hidden');
+
+      const container = document.getElementById('answerOptionsContainer');
+      container.innerHTML = '';
+
+      if (q.type === 'true_false') {
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-2 gap-4 max-w-md mx-auto w-full';
+
+        q.options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          const isTrueOpt = opt.text === 'Đúng';
+          btn.className = `btn-quiz py-5 px-4 rounded-2xl border-2 font-black text-lg text-white flex flex-col items-center justify-center gap-1 shadow-lg ${isTrueOpt ? 'bg-emerald-600/90 hover:bg-emerald-500 border-emerald-400' : 'bg-rose-600/90 hover:bg-rose-500 border-rose-400'}`;
+          btn.id = `opt-btn-${idx}`;
+          btn.innerHTML = `
+            <span class="text-2xl">${isTrueOpt ? '✔' : '✖'}</span>
+            <span>${opt.text}</span>
+            <span class="icon-indicator text-xs font-normal"></span>
+          `;
+          btn.onclick = () => handleSelectOption(idx, q);
+          grid.appendChild(btn);
+        });
+        container.appendChild(grid);
+
+      } else {
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-3';
+
+        const colorPalettes = [
+          'bg-indigo-600/90 hover:bg-indigo-500 border-indigo-500',
+          'bg-pink-600/90 hover:bg-pink-500 border-pink-500',
+          'bg-amber-600/90 hover:bg-amber-500 border-amber-500',
+          'bg-teal-600/90 hover:bg-teal-500 border-teal-500'
+        ];
+
+        q.options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = `btn-quiz text-left p-3.5 rounded-2xl border-2 font-bold text-sm md:text-base text-white flex items-center justify-between shadow-md ${colorPalettes[idx % 4]}`;
+          btn.id = `opt-btn-${idx}`;
+          btn.innerHTML = `
+            <div class="flex items-center gap-3 pr-2">
+              <span class="w-7 h-7 rounded-lg bg-black/25 flex items-center justify-center font-black text-xs shrink-0">${String.fromCharCode(65 + idx)}</span>
+              <span>${opt.text}</span>
+            </div>
+            <span class="icon-indicator text-lg shrink-0"></span>
+          `;
+          btn.onclick = () => handleSelectOption(idx, q);
+          grid.appendChild(btn);
+        });
+
+        container.appendChild(grid);
+      }
+    }
+
+    // XỬ LÝ VẼ HÌNH ẢNH HOẶC CẤU TRÚC TỪ FILE/URL
+    function renderQuestionImage(q) {
+      const illBox = document.getElementById('illustrationBox');
+      if (q.imageSrc && q.imageSrc.trim() !== "") {
+        illBox.innerHTML = `<img src="${q.imageSrc}" alt="Hình minh họa câu hỏi" class="rounded-xl max-h-52 object-contain shadow-md" onerror="handleImageError(this, ${q.id})"/>`;
+        illBox.classList.remove('hidden');
+      } else if (q.svg) {
+        illBox.innerHTML = q.svg;
+        illBox.classList.remove('hidden');
+      } else {
+        illBox.innerHTML = '';
+        illBox.classList.add('hidden');
+      }
+    }
+
+    // TẢI FILE TỪ MÁY
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const currentQ = questions[currentIndex];
+          currentQ.imageSrc = e.target.result;
+          renderQuestionImage(currentQ);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    // NHẬP URL HÌNH ẢNH TRỰC TIẾP
+    function promptCustomImageUrl() {
+      const currentQ = questions[currentIndex];
+      const url = prompt("Nhập đường dẫn hình ảnh (URL):", currentQ.imageSrc || "");
+      if (url !== null) {
+        currentQ.imageSrc = url.trim();
+        renderQuestionImage(currentQ);
+      }
+    }
+
+    function handleImageError(imgElem, qId) {
+      imgElem.outerHTML = `<div class="text-amber-400 text-xs font-bold p-4 text-center border border-amber-500/30 rounded-xl bg-purple-900/50">⚠️ Đường dẫn ảnh không khả dụng hoặc lỗi tải trang. Vui lòng kiểm tra lại link!</div>`;
+    }
+
+    function handleSelectOption(selectedIdx, question) {
+      if (isAnsweringBlocked) return;
+      isAnsweringBlocked = true;
+
+      const selectedOpt = question.options[selectedIdx];
+      const isCorrect = selectedOpt.isCorrect;
+      const correctIdx = question.options.findIndex(o => o.isCorrect);
+
+      question.options.forEach((_, idx) => {
+        const btn = document.getElementById(`opt-btn-${idx}`);
+        if (btn) btn.disabled = true;
+      });
+
+      const selectedBtn = document.getElementById(`opt-btn-${selectedIdx}`);
+      const correctBtn = document.getElementById(`opt-btn-${correctIdx}`);
+
+      if (isCorrect) {
+        selectedBtn.classList.remove('bg-indigo-600/90', 'bg-pink-600/90', 'bg-amber-600/90', 'bg-teal-600/90', 'bg-emerald-600/90', 'bg-rose-600/90');
+        selectedBtn.classList.add('glow-correct');
+        const indicator = selectedBtn.querySelector('.icon-indicator');
+        if (indicator) indicator.innerText = '✔';
+        streak++;
+        if (streak > maxStreak) maxStreak = streak;
+        score += 100 + (streak > 1 ? streak * 15 : 0);
+        correctCount++;
+        SoundFX.playCorrect(streak);
+      } else {
+        selectedBtn.classList.remove('bg-indigo-600/90', 'bg-pink-600/90', 'bg-amber-600/90', 'bg-teal-600/90', 'bg-emerald-600/90', 'bg-rose-600/90');
+        selectedBtn.classList.add('glow-wrong');
+        const indicator = selectedBtn.querySelector('.icon-indicator');
+        if (indicator) indicator.innerText = '✖';
+
+        if (correctBtn) {
+          correctBtn.classList.remove('bg-indigo-600/90', 'bg-pink-600/90', 'bg-amber-600/90', 'bg-teal-600/90', 'bg-emerald-600/90', 'bg-rose-600/90');
+          correctBtn.classList.add('glow-correct');
+          const correctIndicator = correctBtn.querySelector('.icon-indicator');
+          if (correctIndicator) correctIndicator.innerText = '✔ ĐÚNG';
+        }
+        streak = 0;
+        SoundFX.playWrong();
+      }
+
+      updateScoreBadge();
+      showFeedback(isCorrect, question.explanation);
+
+      userAnswersHistory.push({
+        question: question.question,
+        userChoice: selectedOpt.text,
+        correctChoice: question.options[correctIdx].text,
+        isCorrect: isCorrect,
+        explanation: question.explanation
+      });
+
+      startAutoNextCountdown(2.5);
+    }
+
+    function showFeedback(isCorrect, explanation) {
+      const banner = document.getElementById('feedbackBanner');
+      const icon = document.getElementById('feedbackIcon');
+      const title = document.getElementById('feedbackTitle');
+      const text = document.getElementById('feedbackText');
+
+      banner.classList.remove('hidden', 'bg-emerald-950/80', 'border-emerald-600', 'text-emerald-100', 'bg-red-950/80', 'border-red-600', 'text-red-100');
+
+      if (isCorrect) {
+        banner.classList.add('bg-emerald-950/80', 'border-emerald-600', 'text-emerald-100');
+        icon.innerText = '🎉';
+        title.innerText = 'CHÍNH XÁC!';
+      } else {
+        banner.classList.add('bg-red-950/80', 'border-red-600', 'text-red-100');
+        icon.innerText = '💡';
+        title.innerText = 'CHƯA CHÍNH XÁC - GIẢI THÍCH:';
+      }
+      text.innerText = explanation;
+    }
+
+    function startAutoNextCountdown(seconds) {
+      let remaining = seconds;
+      document.getElementById('autoNextTimer').innerText = `${remaining.toFixed(1)}s`;
+
+      const interval = setInterval(() => {
+        remaining -= 0.1;
+        if (remaining <= 0) {
+          clearInterval(interval);
+          document.getElementById('autoNextTimer').innerText = 'Chuyển...';
+          currentIndex++;
+          loadQuestion(currentIndex);
+        } else {
+          document.getElementById('autoNextTimer').innerText = `${remaining.toFixed(1)}s`;
+        }
+      }, 100);
+
+      autoNextTimeout = interval;
+    }
+
+    function finishQuiz() {
+      document.getElementById('quizScreen').classList.remove('flex');
+      document.getElementById('quizScreen').classList.add('hidden');
+      document.getElementById('resultScreen').classList.remove('hidden');
+      document.getElementById('resultScreen').classList.add('flex');
+
+      const accuracy = Math.round((correctCount / questions.length) * 100);
+      document.getElementById('finalScore').innerText = score;
+      document.getElementById('finalAccuracy').innerText = `${accuracy}%`;
+      document.getElementById('finalCorrectCount').innerText = `${correctCount}/${questions.length}`;
+      document.getElementById('finalMaxStreak').innerText = `${maxStreak} 🔥`;
+
+      if (accuracy >= 80) {
+        SoundFX.playComplete();
+        document.getElementById('resultTitle').innerText = 'XUẤT SẮC ĐẠT ĐIỂM CAO!';
+        document.getElementById('resultSubtitle').innerText = 'Bạn đã nắm vững hoàn toàn nội dung bài học!';
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 130, spread: 85, origin: { y: 0.6 } });
+        }
+      } else {
+        document.getElementById('resultTitle').innerText = 'HOÀN THÀNH BÀI THI!';
+        document.getElementById('resultSubtitle').innerText = 'Xem lại chi tiết đáp án để củng cố thêm kiến thức nhé.';
+      }
+
+      buildReviewList();
+    }
+
+    function buildReviewList() {
+      const container = document.getElementById('reviewContainer');
+      container.innerHTML = '<h3 class="font-black text-purple-200 mb-3 text-base">Chi tiết đáp án từng câu hỏi:</h3>';
+
+      userAnswersHistory.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = `p-3.5 rounded-xl border text-xs md:text-sm ${item.isCorrect ? 'bg-emerald-950/40 border-emerald-800/60' : 'bg-red-950/40 border-red-800/60'}`;
+        div.innerHTML = `
+          <div class="font-bold text-white mb-1">Câu ${idx + 1}: ${item.question}</div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="${item.isCorrect ? 'text-emerald-400' : 'text-red-400'} font-black">
+              ${item.isCorrect ? '✔ Đúng' : '✖ Chưa đúng'}
+            </span>
+            <span class="text-gray-300">• Đáp án chuẩn: <strong class="text-teal-300">${item.correctChoice}</strong></span>
+          </div>
+          <div class="text-purple-300 text-xs mt-1 bg-black/30 p-2 rounded-lg">💡 ${item.explanation}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function reviewMistakes() {
+      SoundFX.playClick();
+      const container = document.getElementById('reviewContainer');
+      const btn = document.getElementById('reviewBtn');
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        btn.innerText = 'ẨN ĐÁP ÁN 📑';
+      } else {
+        container.classList.add('hidden');
+        btn.innerText = 'XEM LẠI ĐÁP ÁN 📑';
+      }
+    }
+
+    function restartQuiz() {
+      SoundFX.playClick();
+      startQuiz();
+    }
+  </script>
+</body>
+</html>
